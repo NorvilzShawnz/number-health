@@ -25,6 +25,7 @@ const handleSubmit = async () => {
 
   if (digits.length !== 10) {
     alert('Please enter a valid 10-digit phone number.');
+    console.log('Invalid phone number length:', digits.length);
     return;
   }
 
