@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { validatePhoneNumber } from './api';
+import { validatePhoneNumber, scamRiskCheck } from './api';
 
 function App() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -32,16 +32,15 @@ const handleSubmit = async () => {
   alert(`Phone number submitted: ${phoneNumber}`);
 
   const data = await validatePhoneNumber(digits);
+  const scamData = await scamRiskCheck(digits);
+
+  console.log('Phone validation data:', data);
+  console.log('Telesign scam risk data:', scamData);
 
   if (data.valid) {
-    // Actual Phone Number
-    console.log(phoneNumber);
-    console.log('Phone number is valid:', data.valid);
-    console.log('Country:', data.country_name);
-    console.log('Location:', data.location);
-    console.log('Carrier:', data.carrier);
+    alert(`Phone number is valid. Carrier: ${data.carrier}`);
   } else {
-    console.log('Phone number is invalid');
+    alert('Phone number is invalid.');
   }
 };
 

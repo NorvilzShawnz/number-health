@@ -1,12 +1,29 @@
 
 
 export const validatePhoneNumber = async (phoneNumber) => {
-  const fullNumber = `1${phoneNumber}`;
+  try {
+    const res = await fetch("http://localhost:5000/validate-phone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phoneNumber }),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Error calling backend:", err);
+    return null;
+  }
+};
 
-  const response = await fetch(
-    `${process.env.REACT_APP_VERIFY_API_URL}?access_key=${process.env.REACT_APP_VERIFY_API_KEY}&number=${fullNumber}`
-  );
-
-  const data = await response.json();
-  return data;
+export const scamRiskCheck = async (phoneNumber) => {
+  try {
+    const res = await fetch('http://localhost:5000/scam-risk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber }),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('Error calling backend:', err);
+    return null;
+  }
 };
