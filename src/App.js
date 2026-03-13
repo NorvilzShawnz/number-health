@@ -1,91 +1,92 @@
 import { useState } from 'react';
 import './App.css';
 import { validatePhoneNumber, scamRiskCheck } from './api';
+import ResultsPage from './ResultsPage';
 
 function App() {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [results, setResults] = useState([]);
+  const [page, setPage] = useState('input');
+  const [loading, setLoading] = useState(false);
 
   const formatPhoneNumber = (value) => {
-    // Remove all non-digit characters
     const digits = value.replace(/\D/g, '');
-
-    // Format as (XXX) XXX-XXXX
     if (digits.length <= 3) return digits;
     if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
   };
 
   const handleChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setPhoneNumber(formatted);
+    setPhoneNumber(formatPhoneNumber(e.target.value));
   };
 
-const handleSubmit = async () => {
-  const digits = phoneNumber.replace(/\D/g, '');
+  const handleSubmit = async () => {
+    const digits = phoneNumber.replace(/\D/g, '');
 
-  if (digits.length !== 10) {
-    alert('Please enter a valid 10-digit phone number.');
-    console.log('Invalid phone number length:', digits.length);
-    return;
+    if (digits.length !== 10) {
+      alert('Please enter a valid 10-digit phone number.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const [data, scamData] = await Promise.all([
+        validatePhoneNumber(digits),
+        scamRiskCheck(digits),
+      ]);
+
+      console.log('Phone validation data:', data);
+      console.log('Telesign scam risk data:', scamData);
+
+      setResults([{
+        phoneNumber,
+        valid: data.valid,
+        location: data.location,
+        lineType: data.line_type,
+        carrier: data.carrier,
+        riskLevel: scamData.risk?.level,
+        riskRecommendation: scamData.risk?.recommendation,
+      }]);
+      setPage('results');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (page === 'results') {
+    return (
+      <ResultsPage
+        results={results}
+        onBack={() => {
+          setPage('input');
+          setPhoneNumber('');
+        }}
+      />
+    );
   }
-
-  alert(`Phone number submitted: ${phoneNumber}`);
-
-  const data = await validatePhoneNumber(digits);
-  const scamData = await scamRiskCheck(digits);
-
-  console.log('Phone validation data:', data);
-  console.log('Telesign scam risk data:', scamData);
-
-  if (data.valid) {
-    alert(`Phone number is valid. Carrier: ${data.carrier}`);
-  } else {
-    alert('Phone number is invalid.');
-  }
-};
 
   return (
     <div className="App">
       <header className="App-header">
-        <h2>Please enter your Phone Number</h2>
-        <input
-          type="tel"
-          value={phoneNumber}
-          onChange={handleChange}
-          placeholder="(555) 555-5555"
-          maxLength={14}
-          style={{
-            padding: '10px 15px',
-            fontSize: '1.2rem',
-            borderRadius: '8px',
-            border: '2px solid #61dafb',
-            outline: 'none',
-            marginBottom: '15px',
-            width: '220px',
-            textAlign: 'center',
-            background: '#282c34',
-            color: 'white',
-          }}
-        />
-        <button
-          onClick={handleSubmit}
-          style={{
-            padding: '10px 25px',
-            fontSize: '1rem',
-            borderRadius: '8px',
-            border: 'none',
-            background: '#61dafb',
-            color: '#282c34',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
-          Submit
-        </button>
+        <div className="phone-card">
+          <h2>Phone Number Lookup</h2>
+          <p>Enter a number to check its validity and scam risk</p>
+          <input
+            className="phone-input"
+            type="tel"
+            value={phoneNumber}
+            onChange={handleChange}
+            placeholder="(555) 555-5555"
+            maxLength={14}
+            disabled={loading}
+          />
+          <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Checking...' : 'Check Number'}
+          </button>
+        </div>
       </header>
     </div>
   );
 }
-
 
 export default App;

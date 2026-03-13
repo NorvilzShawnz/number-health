@@ -44,7 +44,7 @@ app.post("/scam-risk", async (req, res) => {
   try {
     const response = await axios.post(
       "https://detect.telesign.com/intelligence/phone",
-      `phone_number=${phoneNumber}&account_lifecycle_event=create`,
+      `phone_number=+${phoneNumber}&account_lifecycle_event=create`,
       {
         headers: {
           Authorization: `Basic ${auth}`,
