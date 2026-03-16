@@ -45,7 +45,7 @@ app.post("/scam-risk", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `https://www.ipqualityscore.com/api/json/phone/${process.env.IPQS_API_KEY}/${phoneNumber}?country[]=US&country[]=UK&country[]=CA`
+      `${process.env.IPQS_API_URL}/${process.env.IPQS_API_KEY}/${phoneNumber}?country[]=US&country[]=UK&country[]=CA`
     );
     res.json(response.data);
   } catch (error) {
