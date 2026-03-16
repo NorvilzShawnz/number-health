@@ -4,10 +4,11 @@ import { validatePhoneNumber, scamRiskCheck } from './api';
 import ResultsPage from './ResultsPage';
 
 function App() {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumbers, setPhoneNumbers] = useState(['']);
   const [results, setResults] = useState([]);
   const [page, setPage] = useState('input');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
 
   const formatPhoneNumber = (value) => {
     const digits = value.replace(/\D/g, '');
@@ -16,37 +17,59 @@ function App() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
   };
 
-  const handleChange = (e) => {
-    setPhoneNumber(formatPhoneNumber(e.target.value));
+  const handleChange = (index, value) => {
+    const updated = [...phoneNumbers];
+    updated[index] = formatPhoneNumber(value);
+    setPhoneNumbers(updated);
   };
 
-  const handleSubmit = async () => {
-    const digits = phoneNumber.replace(/\D/g, '');
+  const addNumber = () => setPhoneNumbers([...phoneNumbers, '']);
+  const removeNumber = (index) => setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
 
-    if (digits.length !== 10) {
-      alert('Please enter a valid 10-digit phone number.');
+  const handleSubmit = async () => {
+    const entries = phoneNumbers
+      .map(p => ({ formatted: p, digits: p.replace(/\D/g, '') }))
+      .filter(e => e.digits.length === 10);
+
+    if (entries.length === 0) {
+      alert('Please enter at least one valid 10-digit phone number.');
       return;
     }
 
     setLoading(true);
+    setProgress({ done: 0, total: entries.length });
+
     try {
-      const [data, scamData] = await Promise.all([
-        validatePhoneNumber(digits),
-        scamRiskCheck(digits),
-      ]);
+      const allResults = await Promise.all(
+        entries.map(async ({ formatted, digits }) => {
+          const [data, scamData] = await Promise.all([
+            validatePhoneNumber(digits),
+            scamRiskCheck(digits),
+          ]);
+          setProgress(p => ({ ...p, done: p.done + 1 }));
+          return {
+            phoneNumber: formatted,
+            valid: scamData.valid ?? data.valid,
+            active: scamData.active,
+            location: scamData.city && scamData.region
+              ? `${scamData.city}, ${scamData.region}`
+              : data.location,
+            lineType: scamData.line_type || data.line_type,
+            carrier: scamData.carrier || data.carrier,
+            fraudScore: scamData.fraud_score,
+            spammer: scamData.spammer,
+            recentAbuse: scamData.recent_abuse,
+            risky: scamData.risky,
+            voip: scamData.VOIP,
+            prepaid: scamData.prepaid,
+            doNotCall: scamData.do_not_call,
+            leaked: scamData.leaked,
+            tcpaBlacklist: scamData.tcpa_blacklist,
+          };
+        })
+      );
 
-      console.log('Phone validation data:', data);
-      console.log('Telesign scam risk data:', scamData);
-
-      setResults([{
-        phoneNumber,
-        valid: data.valid,
-        location: data.location,
-        lineType: data.line_type,
-        carrier: data.carrier,
-        riskLevel: scamData.risk?.level,
-        riskRecommendation: scamData.risk?.recommendation,
-      }]);
+      setResults(allResults);
       setPage('results');
     } finally {
       setLoading(false);
@@ -59,29 +82,59 @@ function App() {
         results={results}
         onBack={() => {
           setPage('input');
-          setPhoneNumber('');
+          setPhoneNumbers(['']);
         }}
       />
     );
   }
+
+  const validCount = phoneNumbers.filter(p => p.replace(/\D/g, '').length === 10).length;
 
   return (
     <div className="App">
       <header className="App-header">
         <div className="phone-card">
           <h2>Phone Number Lookup</h2>
-          <p>Enter a number to check its validity and scam risk</p>
-          <input
-            className="phone-input"
-            type="tel"
-            value={phoneNumber}
-            onChange={handleChange}
-            placeholder="(555) 555-5555"
-            maxLength={14}
-            disabled={loading}
-          />
-          <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Checking...' : 'Check Number'}
+          <p>Enter up to 10 numbers to check validity and scam risk</p>
+
+          <div className="phone-input-list">
+            {phoneNumbers.map((number, i) => (
+              <div key={i} className="phone-input-row">
+                <input
+                  className="phone-input"
+                  type="tel"
+                  value={number}
+                  onChange={e => handleChange(i, e.target.value)}
+                  placeholder="(555) 555-5555"
+                  maxLength={14}
+                  disabled={loading}
+                />
+                {phoneNumbers.length > 1 && (
+                  <button
+                    className="remove-btn"
+                    onClick={() => removeNumber(i)}
+                    disabled={loading}
+                    aria-label="Remove"
+                  >×</button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {phoneNumbers.length < 10 && (
+            <button className="add-btn" onClick={addNumber} disabled={loading}>
+              + Add another number
+            </button>
+          )}
+
+          <button
+            className="submit-btn"
+            onClick={handleSubmit}
+            disabled={loading || validCount === 0}
+          >
+            {loading
+              ? `Checking ${progress.done} / ${progress.total}...`
+              : validCount > 1 ? `Check ${validCount} Numbers` : 'Check Number'}
           </button>
         </div>
       </header>

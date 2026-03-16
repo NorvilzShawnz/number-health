@@ -35,29 +35,22 @@ app.post("/validate-phone", async (req, res) => {
 });
 
 app.post("/scam-risk", async (req, res) => {
-  const { phoneNumber } = req.body;
+  let { phoneNumber } = req.body;
 
-  const auth = Buffer.from(
-    `${process.env.TELESIGN_CUSTOMER_ID}:${process.env.TELESIGN_API_KEY}`
-  ).toString("base64");
+  // Remove all non-digit characters and ensure leading 1
+  phoneNumber = phoneNumber.replace(/\D/g, "");
+  if (!phoneNumber.startsWith("1")) {
+    phoneNumber = "1" + phoneNumber;
+  }
 
   try {
-    const response = await axios.post(
-      "https://detect.telesign.com/intelligence/phone",
-      `phone_number=+${phoneNumber}&account_lifecycle_event=create`,
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json"
-        }
-      }
+    const response = await axios.get(
+      `https://www.ipqualityscore.com/api/json/phone/${process.env.IPQS_API_KEY}/${phoneNumber}?country[]=US&country[]=UK&country[]=CA`
     );
-
     res.json(response.data);
   } catch (error) {
     console.error(error.response?.data || error.message);
-    res.status(500).json({ error: "Telesign request failed" });
+    res.status(500).json({ error: "IPQualityScore request failed" });
   }
 });
 

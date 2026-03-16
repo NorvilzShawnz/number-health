@@ -19,7 +19,7 @@
   padding: 48px 40px;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  width: 320px;
+  width: 360px;
 }
 
 .phone-card h2 {
@@ -81,4 +81,68 @@
 
 .submit-btn:active {
   transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Batch input */
+.phone-input-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.phone-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.phone-input-row .phone-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.remove-btn:hover {
+  background: rgba(248, 113, 113, 0.22);
+}
+
+.add-btn {
+  width: 100%;
+  padding: 9px;
+  font-size: 0.875rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(97, 218, 251, 0.35);
+  background: transparent;
+  color: rgba(97, 218, 251, 0.7);
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 12px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.add-btn:hover {
+  background: rgba(97, 218, 251, 0.08);
+  color: #61dafb;
 }
