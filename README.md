@@ -1,6 +1,6 @@
 # Phone Number Intelligence Tool
 
-A web application for validating phone numbers and assessing their scam/fraud risk. Supports single lookups and bulk batch processing via file upload.
+A web application for validating phone numbers and assessing their scam/fraud risk. Supports single lookups and bulk batch processing via file upload. Deployed as a serverless app on Netlify.
 
 ---
 
@@ -10,7 +10,8 @@ A web application for validating phone numbers and assessing their scam/fraud ri
 - **Fraud Risk Scoring** — returns a 0–100 fraud score powered by IPQualityScore, with risk level classification (Low / Moderate / High / Critical)
 - **Signal Breakdown** — displays individual risk signals: spammer status, recent abuse, leaked data, TCPA blacklist, do-not-call registry, prepaid, and VOIP flags
 - **Batch Processing** — manually enter up to 10 numbers, or upload a `.txt` file for large-scale lookups
-- **Secure API Proxy** — all API keys stay on the backend; the frontend never exposes credentials
+- **Webhook API** — external systems can query number health via a secured POST endpoint
+- **Serverless** — no Express server to manage; all backend logic runs as Netlify Functions
 
 ---
 
@@ -19,8 +20,9 @@ A web application for validating phone numbers and assessing their scam/fraud ri
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, Create React App |
-| Backend | Node.js, Express |
+| Backend | Netlify Functions (serverless) |
 | HTTP Client | Axios |
+| Hosting | Netlify |
 | Phone Validation | [NumVerify API](https://numverify.com) |
 | Fraud/Risk Data | [IPQualityScore API](https://www.ipqualityscore.com) |
 
@@ -32,6 +34,7 @@ A web application for validating phone numbers and assessing their scam/fraud ri
 
 - Node.js v16+
 - npm
+- [Netlify CLI](https://docs.netlify.com/cli/get-started/) (`npm install -g netlify-cli`)
 - A [NumVerify](https://numverify.com) API key
 - An [IPQualityScore](https://www.ipqualityscore.com) API key
 
@@ -43,45 +46,45 @@ A web application for validating phone numbers and assessing their scam/fraud ri
    cd your-repo-name/my-app
    ```
 
-2. **Install frontend dependencies**
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Install backend dependencies**
-   ```bash
-   cd server
-   npm install
-   ```
+3. **Configure environment variables**
 
-4. **Configure environment variables**
-
-   Create a `.env` file inside `my-app/server/`:
+   Create a `.env` file in the project root (`my-app/`):
    ```env
    VERIFY_API_KEY=your_numverify_api_key
    VERIFY_API_URL=http://apilayer.net/api/validate
 
    IPQS_API_KEY=your_ipqualityscore_api_key
    IPQS_API_URL=https://www.ipqualityscore.com/api/json/phone
+
+   WEBHOOK_SECRET=your_webhook_api_key
    ```
 
 ---
 
-## Running the App
+## Running Locally
 
-You need two terminals — one for the backend, one for the frontend.
+A single command starts both the frontend and serverless functions:
 
-**Start the backend server** (from `my-app/server/`):
 ```bash
-node server.js
+netlify dev
 ```
-The server runs on `http://localhost:5000`.
 
-**Start the frontend** (from `my-app/`):
-```bash
-npm start
-```
-The app opens at `http://localhost:3000`.
+The app opens at `http://localhost:8888`.
+
+---
+
+## Deployment
+
+The app deploys automatically to Netlify when changes are pushed to `main`.
+
+**Required:** Add all environment variables (`VERIFY_API_KEY`, `VERIFY_API_URL`, `IPQS_API_KEY`, `IPQS_API_URL`, `WEBHOOK_SECRET`) in the Netlify dashboard under Site settings → Environment variables.
+
+Live URL: https://numberhealth.netlify.app
 
 ---
 
@@ -110,6 +113,38 @@ Each number returns:
 
 ---
 
+## Webhook API
+
+External systems can query number health via a secured POST endpoint.
+
+**Endpoint:**
+```
+POST /.netlify/functions/webhook-number-health
+```
+
+**Headers:**
+| Header | Value |
+|---|---|
+| `Content-Type` | `application/json` |
+| `x-api-key` | Your `WEBHOOK_SECRET` value |
+
+**Request body:**
+```json
+{
+  "phoneNumber": "7542457499"
+}
+```
+
+**Example (curl):**
+```bash
+curl -X POST https://numberhealth.netlify.app/.netlify/functions/webhook-number-health \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-secret-key" \
+  -d '{"phoneNumber": "7542457499"}'
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -122,9 +157,13 @@ my-app/
 │   ├── ResultsPage.css
 │   ├── api.js            # Frontend fetch wrappers
 │   └── index.js
-└── server/
-    ├── server.js         # Express API proxy
-    └── .env              # API keys (not committed)
+├── netlify/
+│   └── functions/
+│       ├── validate-phone.js          # Phone validation (NumVerify)
+│       ├── scam-risk.js               # Fraud scoring (IPQualityScore)
+│       └── webhook-number-health.js   # Webhook combining both APIs
+├── netlify.toml           # Netlify build & function config
+└── .env                   # API keys (not committed)
 ```
 
 ---
@@ -137,6 +176,7 @@ my-app/
 | `VERIFY_API_URL` | NumVerify endpoint |
 | `IPQS_API_KEY` | IPQualityScore API key |
 | `IPQS_API_URL` | IPQualityScore phone endpoint |
+| `WEBHOOK_SECRET` | API key for authenticating webhook requests |
 
 > **Never commit your `.env` file.** It is included in `.gitignore`.
 
