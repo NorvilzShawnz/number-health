@@ -33,6 +33,19 @@
   animation: fadeSlideUp 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.card-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #61dafb;
+}
+
+.card-icon svg {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 0 8px rgba(97, 218, 251, 0.4));
+}
+
 .phone-card h2 {
   margin: 0 0 8px 0;
   font-size: 1.5rem;
@@ -157,4 +170,106 @@
 .add-btn:hover {
   background: rgba(97, 218, 251, 0.08);
   color: #61dafb;
+}
+
+/* Upload divider */
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+  margin: 4px 0 10px;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Upload button */
+.upload-btn {
+  width: 100%;
+  padding: 9px;
+  font-size: 0.875rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(97, 218, 251, 0.35);
+  background: transparent;
+  color: rgba(97, 218, 251, 0.7);
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 14px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.upload-btn:hover {
+  background: rgba(97, 218, 251, 0.08);
+  color: #61dafb;
+}
+
+.upload-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* File loaded state */
+.file-loaded-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(97, 218, 251, 0.07);
+  border: 1px solid rgba(97, 218, 251, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  animation: slideInRow 0.2s ease;
+}
+
+.file-loaded-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-loaded-icon {
+  font-size: 1.3rem;
+}
+
+.file-loaded-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #61dafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.file-loaded-count {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+
+.file-clear-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.file-clear-btn:hover {
+  background: rgba(248, 113, 113, 0.22);
 }

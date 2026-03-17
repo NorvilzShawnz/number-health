@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import './App.css';
 import { validatePhoneNumber, scamRiskCheck } from './api';
 import ResultsPage from './ResultsPage';
 
 function App() {
   const [phoneNumbers, setPhoneNumbers] = useState(['']);
+  const [fileInfo, setFileInfo] = useState(null); // { name, count } when a file is loaded
   const [results, setResults] = useState([]);
   const [page, setPage] = useState('input');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const fileInputRef = useRef(null);
 
   const formatPhoneNumber = (value) => {
     const digits = value.replace(/\D/g, '');
@@ -25,6 +27,32 @@ function App() {
 
   const addNumber = () => setPhoneNumbers([...phoneNumbers, '']);
   const removeNumber = (index) => setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const lines = ev.target.result.split(/[\r\n,]+/);
+      const parsed = lines
+        .map(l => l.replace(/\D/g, ''))
+        .filter(d => d.length === 10)
+        .map(d => formatPhoneNumber(d));
+      if (parsed.length === 0) {
+        alert('No valid 10-digit phone numbers found in the file.');
+        return;
+      }
+      setPhoneNumbers(parsed);
+      setFileInfo({ name: file.name, count: parsed.length });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const clearFile = () => {
+    setFileInfo(null);
+    setPhoneNumbers(['']);
+  };
 
   const handleSubmit = async () => {
     const entries = phoneNumbers
@@ -94,37 +122,69 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div className="phone-card">
-          <h2>Phone Number Lookup</h2>
-          <p>Enter up to 10 numbers to check validity and scam risk</p>
-
-          <div className="phone-input-list">
-            {phoneNumbers.map((number, i) => (
-              <div key={i} className="phone-input-row">
-                <input
-                  className="phone-input"
-                  type="tel"
-                  value={number}
-                  onChange={e => handleChange(i, e.target.value)}
-                  placeholder="(555) 555-5555"
-                  maxLength={14}
-                  disabled={loading}
-                />
-                {phoneNumbers.length > 1 && (
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeNumber(i)}
-                    disabled={loading}
-                    aria-label="Remove"
-                  >×</button>
-                )}
-              </div>
-            ))}
+          <div className="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 5.61 5.61l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
           </div>
+          <h2>Phone Number Lookup</h2>
+          <p>Enter numbers manually or upload a .txt file</p>
 
-          {phoneNumbers.length < 10 && (
-            <button className="add-btn" onClick={addNumber} disabled={loading}>
-              + Add another number
-            </button>
+          {fileInfo ? (
+            <div className="file-loaded-box">
+              <div className="file-loaded-info">
+                <span className="file-loaded-icon">📄</span>
+                <div>
+                  <div className="file-loaded-name">{fileInfo.name}</div>
+                  <div className="file-loaded-count">{fileInfo.count} valid numbers loaded</div>
+                </div>
+              </div>
+              <button className="file-clear-btn" onClick={clearFile} disabled={loading}>✕</button>
+            </div>
+          ) : (
+            <>
+              <div className="phone-input-list">
+                {phoneNumbers.map((number, i) => (
+                  <div key={i} className="phone-input-row">
+                    <input
+                      className="phone-input"
+                      type="tel"
+                      value={number}
+                      onChange={e => handleChange(i, e.target.value)}
+                      placeholder="(555) 555-5555"
+                      maxLength={14}
+                      disabled={loading}
+                    />
+                    {phoneNumbers.length > 1 && (
+                      <button
+                        className="remove-btn"
+                        onClick={() => removeNumber(i)}
+                        disabled={loading}
+                        aria-label="Remove"
+                      >×</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {phoneNumbers.length < 10 && (
+                <button className="add-btn" onClick={addNumber} disabled={loading}>
+                  + Add another number
+                </button>
+              )}
+
+              <div className="upload-divider"><span>or</span></div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt"
+                style={{ display: 'none' }}
+                onChange={handleFileUpload}
+              />
+              <button className="upload-btn" onClick={() => fileInputRef.current.click()} disabled={loading}>
+                Upload .txt file
+              </button>
+            </>
           )}
 
           <button
