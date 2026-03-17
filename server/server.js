@@ -104,6 +104,7 @@ app.post("/webhook/number-health", async (req, res) => {
       doNotCall: scamData.do_not_call,
       leaked: scamData.leaked,
       tcpaBlacklist: scamData.tcpa_blacklist,
+      zipCode: scamData.zip_code,
     });
   } catch (error) {
     console.error(error.response?.data || error.message);
