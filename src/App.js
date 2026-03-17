@@ -93,6 +93,7 @@ function App() {
             doNotCall: scamData.do_not_call,
             leaked: scamData.leaked,
             tcpaBlacklist: scamData.tcpa_blacklist,
+            zipCode: scamData.zip_code,
           };
         })
       );

@@ -1,5 +1,18 @@
 import './ResultsPage.css';
 
+const FLAG_TOOLTIPS = {
+  spammer:       'Has this number been reported for spam or harassing calls/texts?',
+  recentAbuse:   'Has this number been associated with recent or ongoing fraud?',
+  leaked:        'Has this number been exposed in an online database breach or compromise?',
+  risky:         'Is this number associated with fraudulent activity, scams, or robocalls?',
+  voip:          'Is this a Voice Over Internet Protocol (VOIP) or digital phone number?',
+  prepaid:       'Is this number associated with a prepaid service plan?',
+  doNotCall:     'Is this number listed on any Do Not Call (DNC) lists? (USA & Canada only)',
+  tcpaBlacklist: 'Is this number associated with repeated TCPA lawsuit plaintiffs?',
+  fraudScore:    'IPQualityScore fraud score (0-100). Higher scores indicate greater risk.',
+  zipCode:       'The zip code associated with this phone number.',
+};
+
 function StatusIcon({ ok }) {
   return <span className={`status-icon ${ok ? 'icon-ok' : 'icon-bad'}`}>{ok ? '✓' : '✗'}</span>;
 }
@@ -15,10 +28,14 @@ function ResultRow({ label, value, valueClass }) {
 
 function getRiskLevel(score) {
   if (score == null) return { label: 'Unknown', className: '' };
-  if (score <= 24)   return { label: 'Low Risk',      className: 'risk-low' };
-  if (score <= 59)   return { label: 'Moderate Risk', className: 'risk-medium' };
-  if (score <= 84)   return { label: 'High Risk',     className: 'risk-high' };
-  return               { label: 'Critical Risk',  className: 'risk-critical' };
+  if (score < 75)    return { label: 'Low Risk',        className: 'risk-low' };
+  if (score < 85)    return { label: 'Suspicious',      className: 'risk-medium' };
+  if (score < 90)    return { label: 'High Risk',       className: 'risk-high' };
+  return               { label: 'Critical Risk',    className: 'risk-critical' };
+}
+
+function isHighRisk(result) {
+  return result.valid === false || result.active === false || (result.fraudScore != null && result.fraudScore >= 90);
 }
 
 function ScoreBar({ score }) {
@@ -60,28 +77,39 @@ function RiskFlags({ result }) {
   return (
     <div className="risk-flags">
       {activeFlags.map(f => (
-        <span key={f.key} className="risk-flag-pill">{f.label}</span>
+        <span key={f.key} className="risk-flag-pill" data-tooltip={FLAG_TOOLTIPS[f.key]}>{f.label}</span>
       ))}
     </div>
   );
 }
 
 function SignalBreakdown({ result }) {
-  const signals = [
-    { label: 'Spammer',        value: result.spammer },
-    { label: 'Recent Abuse',   value: result.recentAbuse },
-    { label: 'Leaked',         value: result.leaked },
-    { label: 'Risky',          value: result.risky },
-    { label: 'VOIP',           value: result.voip },
-    { label: 'Prepaid',        value: result.prepaid },
-    { label: 'Do Not Call',    value: result.doNotCall },
-    { label: 'TCPA Blacklist', value: result.tcpaBlacklist },
+  const boolSignals = [
+    { key: 'spammer',       label: 'Spammer',        value: result.spammer },
+    { key: 'recentAbuse',   label: 'Recent Abuse',   value: result.recentAbuse },
+    { key: 'leaked',        label: 'Leaked',         value: result.leaked },
+    { key: 'risky',         label: 'Risky',          value: result.risky },
+    { key: 'voip',          label: 'VOIP',           value: result.voip },
+    { key: 'prepaid',       label: 'Prepaid',        value: result.prepaid },
+    { key: 'doNotCall',     label: 'Do Not Call',    value: result.doNotCall },
+    { key: 'tcpaBlacklist', label: 'TCPA Blacklist', value: result.tcpaBlacklist },
+  ];
+
+  const dataSignals = [
+    { key: 'fraudScore', label: 'Fraud Score', value: result.fraudScore ?? '—' },
+    { key: 'zipCode',    label: 'Zip Code',    value: result.zipCode || '—' },
   ];
 
   return (
     <div className="signal-grid">
-      {signals.map(s => (
-        <div key={s.label} className="signal-item">
+      {dataSignals.map(s => (
+        <div key={s.label} className="signal-item" data-tooltip={FLAG_TOOLTIPS[s.key]}>
+          <span className="signal-label">{s.label}</span>
+          <span className="signal-value signal-data">{s.value}</span>
+        </div>
+      ))}
+      {boolSignals.map(s => (
+        <div key={s.label} className="signal-item" data-tooltip={FLAG_TOOLTIPS[s.key]}>
           <span className="signal-label">{s.label}</span>
           <span className={`signal-value ${s.value ? 'signal-yes' : 'signal-no'}`}>
             {s.value ? 'Yes' : 'No'}
@@ -93,6 +121,7 @@ function SignalBreakdown({ result }) {
 }
 
 function ResultCard({ result }) {
+  const highRisk = isHighRisk(result);
   const isActive = result.active ?? result.valid;
 
   const lineTypeLabel = result.lineType
@@ -100,14 +129,14 @@ function ResultCard({ result }) {
     : null;
 
   return (
-    <div className="result-card">
+    <div className={`result-card${highRisk ? ' result-card-danger' : ''}`}>
       <div className="result-card-header">
         <div className="result-number-group">
-          <StatusIcon ok={isActive} />
+          <StatusIcon ok={!highRisk} />
           <span className="result-number">{result.phoneNumber}</span>
         </div>
-        <span className={`validity-badge ${isActive ? 'valid' : 'invalid'}`}>
-          {isActive ? 'Active' : 'Inactive'}
+        <span className={`validity-badge ${highRisk ? 'invalid' : 'valid'}`}>
+          {highRisk ? 'High Risk' : isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
 
