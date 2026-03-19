@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { calculateCompositeScore } = require("./composite-score");
 
 exports.handler = async (event) => {
   const headers = {
@@ -40,17 +41,29 @@ exports.handler = async (event) => {
   const formattedNumber = "+" + phoneNumber;
 
   try {
-    const [validateRes, scamRes] = await Promise.all([
+    const [validateRes, scamRes, abstractRes] = await Promise.all([
       axios.get(
         `${process.env.VERIFY_API_URL}?access_key=${process.env.VERIFY_API_KEY}&number=${formattedNumber}`
       ),
       axios.get(
         `${process.env.IPQS_API_URL}/${process.env.IPQS_API_KEY}/${phoneNumber}?country[]=US&country[]=UK&country[]=CA`
       ),
+      axios.get(
+        `${process.env.ABSTRACT_API_URL}`, { params: { api_key: process.env.ABSTRACT_API_KEY, phone: phoneNumber } }
+      ),
     ]);
 
     const data = validateRes.data;
     const scamData = scamRes.data;
+    const abstractData = abstractRes.data;
+
+    const ipqsVoip = scamData.VOIP === true;
+    const abstractVoip = abstractData.phone_validation?.is_voip === true;
+    const confirmedVoip = ipqsVoip && abstractVoip;
+
+    const lineType = abstractData.phone_carrier?.line_type || scamData.line_type || data.line_type || null;
+
+    const { compositeScore, riskLevel, breakdown } = calculateCompositeScore(scamData, abstractData);
 
     return {
       statusCode: 200,
@@ -59,21 +72,23 @@ exports.handler = async (event) => {
         phoneNumber: formattedNumber,
         valid: scamData.valid ?? data.valid,
         active: scamData.active,
+        lineType,
+        carrier: scamData.carrier || data.carrier,
         location: scamData.city && scamData.region
           ? `${scamData.city}, ${scamData.region}`
           : data.location,
-        lineType: scamData.line_type || data.line_type,
-        carrier: scamData.carrier || data.carrier,
-        fraudScore: scamData.fraud_score,
+        zipCode: scamData.zip_code,
+        fraudScore: compositeScore,
+        riskLevel,
+        scoreBreakdown: breakdown,
         spammer: scamData.spammer,
         recentAbuse: scamData.recent_abuse,
         risky: scamData.risky,
-        voip: scamData.VOIP,
+        voip: confirmedVoip,
         prepaid: scamData.prepaid,
         doNotCall: scamData.do_not_call,
         leaked: scamData.leaked,
         tcpaBlacklist: scamData.tcpa_blacklist,
-        zipCode: scamData.zip_code,
       }),
     };
   } catch (error) {

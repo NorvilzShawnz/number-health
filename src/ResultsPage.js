@@ -5,11 +5,11 @@ const FLAG_TOOLTIPS = {
   recentAbuse:   'Has this number been associated with recent or ongoing fraud?',
   leaked:        'Has this number been exposed in an online database breach or compromise?',
   risky:         'Is this number associated with fraudulent activity, scams, or robocalls?',
-  voip:          'Is this a Voice Over Internet Protocol (VOIP) or digital phone number?',
+  voip:          'Is this a VOIP number? Confirmed only when both IPQualityScore and Abstract API agree.',
   prepaid:       'Is this number associated with a prepaid service plan?',
   doNotCall:     'Is this number listed on any Do Not Call (DNC) lists? (USA & Canada only)',
   tcpaBlacklist: 'Is this number associated with repeated TCPA lawsuit plaintiffs?',
-  fraudScore:    'IPQualityScore fraud score (0-100). Higher scores indicate greater risk.',
+  fraudScore:    'Composite risk score (0-100) combining IPQualityScore and Abstract API signals. Hover the breakdown for details.',
   zipCode:       'The zip code associated with this phone number.',
 };
 
@@ -28,23 +28,23 @@ function ResultRow({ label, value, valueClass }) {
 
 function getRiskLevel(score) {
   if (score == null) return { label: 'Unknown', className: '' };
-  if (score < 75)    return { label: 'Low Risk',        className: 'risk-low' };
-  if (score < 85)    return { label: 'Suspicious',      className: 'risk-medium' };
-  if (score < 90)    return { label: 'High Risk',       className: 'risk-high' };
+  if (score <= 20)   return { label: 'Low Risk',        className: 'risk-low' };
+  if (score <= 45)   return { label: 'Medium Risk',     className: 'risk-medium' };
+  if (score <= 70)   return { label: 'High Risk',       className: 'risk-high' };
   return               { label: 'Critical Risk',    className: 'risk-critical' };
 }
 
 function isHighRisk(result) {
-  return result.valid === false || result.active === false || (result.fraudScore != null && result.fraudScore >= 90);
+  return result.valid === false || result.active === false || (result.fraudScore != null && result.fraudScore > 45);
 }
 
-function ScoreBar({ score }) {
+function ScoreBar({ score, ipqsRawScore, breakdown }) {
   const { label, className } = getRiskLevel(score);
   const pct = score ?? 0;
   return (
     <div className="score-bar-container">
       <div className="score-bar-header">
-        <span className="score-bar-label">Fraud Score</span>
+        <span className="score-bar-label">Composite Risk Score</span>
         <span className={`score-bar-value ${className}`}>
           {score ?? '—'}<span className="score-bar-max"> / 100</span>
         </span>
@@ -53,16 +53,29 @@ function ScoreBar({ score }) {
         <div className={`score-bar-fill ${className}`} style={{ width: `${pct}%` }} />
       </div>
       <span className={`score-risk-label ${className}`}>{label}</span>
+      {ipqsRawScore != null && (
+        <div className="score-raw-note">IPQS raw score: {ipqsRawScore}/100</div>
+      )}
+      {breakdown && breakdown.length > 0 && (
+        <div className="score-breakdown">
+          {breakdown.map((b, i) => (
+            <div key={i} className="score-breakdown-row">
+              <span className="breakdown-signal">{b.signal}</span>
+              <span className="breakdown-points">+{b.points}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function RiskFlags({ result }) {
   const flags = [
-    { key: 'spammer',       label: 'Spammer',        active: result.spammer },
-    { key: 'recentAbuse',   label: 'Recent Abuse',   active: result.recentAbuse },
-    { key: 'leaked',        label: 'Leaked',         active: result.leaked },
-    { key: 'voip',          label: 'VOIP',           active: result.voip },
+    { key: 'spammer',       label: 'Spammer (IPQS)',        active: result.spammer },
+    { key: 'recentAbuse',   label: 'Recent Abuse (IPQS)',   active: result.recentAbuse },
+    { key: 'leaked',        label: 'Leaked (IPQS)',         active: result.leaked },
+    { key: 'voip',          label: 'VOIP (Abstract)',       active: result.voip },
     { key: 'prepaid',       label: 'Prepaid',        active: result.prepaid },
     { key: 'doNotCall',     label: 'Do Not Call',    active: result.doNotCall },
     { key: 'tcpaBlacklist', label: 'TCPA Blacklist', active: result.tcpaBlacklist },
@@ -85,18 +98,18 @@ function RiskFlags({ result }) {
 
 function SignalBreakdown({ result }) {
   const boolSignals = [
-    { key: 'spammer',       label: 'Spammer',        value: result.spammer },
-    { key: 'recentAbuse',   label: 'Recent Abuse',   value: result.recentAbuse },
-    { key: 'leaked',        label: 'Leaked',         value: result.leaked },
-    { key: 'risky',         label: 'Risky',          value: result.risky },
-    { key: 'voip',          label: 'VOIP',           value: result.voip },
-    { key: 'prepaid',       label: 'Prepaid',        value: result.prepaid },
-    { key: 'doNotCall',     label: 'Do Not Call',    value: result.doNotCall },
-    { key: 'tcpaBlacklist', label: 'TCPA Blacklist', value: result.tcpaBlacklist },
+    { key: 'spammer',       label: 'Spammer (IPQS)',        value: result.spammer },
+    { key: 'recentAbuse',   label: 'Recent Abuse (IPQS)',   value: result.recentAbuse },
+    { key: 'leaked',        label: 'Leaked (IPQS)',         value: result.leaked },
+    { key: 'risky',         label: 'Risky (IPQS)',          value: result.risky },
+    { key: 'voip',          label: 'VOIP (Abstract)',       value: result.voip },
+    { key: 'prepaid',       label: 'Prepaid (IPQS)',        value: result.prepaid },
+    { key: 'doNotCall',     label: 'Do Not Call (IPQS)',    value: result.doNotCall },
+    { key: 'tcpaBlacklist', label: 'TCPA Blacklist (IPQS)', value: result.tcpaBlacklist },
   ];
 
   const dataSignals = [
-    { key: 'fraudScore', label: 'Fraud Score', value: result.fraudScore ?? '—' },
+    { key: 'fraudScore', label: 'Composite Score', value: result.fraudScore ?? '—' },
     { key: 'zipCode',    label: 'Zip Code',    value: result.zipCode || '—' },
   ];
 
@@ -152,7 +165,7 @@ function ResultCard({ result }) {
         <div className="result-divider" />
         <div className="result-section-label">Risk Assessment</div>
 
-        <ScoreBar score={result.fraudScore} />
+        <ScoreBar score={result.fraudScore} ipqsRawScore={result.ipqsRawScore} breakdown={result.scoreBreakdown} />
 
         <div className="result-section-sublabel">Risk Flags</div>
         <RiskFlags result={result} />

@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { calculateCompositeScore } = require("./composite-score");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -23,12 +24,40 @@ exports.handler = async (event) => {
   }
 
   try {
-    const response = await axios.get(
-      `${process.env.IPQS_API_URL}/${process.env.IPQS_API_KEY}/${phoneNumber}?country[]=US&country[]=UK&country[]=CA`
-    );
-    return { statusCode: 200, headers, body: JSON.stringify(response.data) };
+    const [ipqsRes, abstractRes] = await Promise.all([
+      axios.get(
+        `${process.env.IPQS_API_URL}/${process.env.IPQS_API_KEY}/${phoneNumber}?country[]=US&country[]=UK&country[]=CA`
+      ),
+      axios.get(
+        `${process.env.ABSTRACT_API_URL}`, { params: { api_key: process.env.ABSTRACT_API_KEY, phone: phoneNumber } }
+      ),
+    ]);
+
+    const ipqs = ipqsRes.data;
+    const abstract = abstractRes.data;
+
+    const ipqsVoip = ipqs.VOIP === true;
+    const abstractVoip = abstract.phone_validation?.is_voip === true;
+    const confirmedVoip = ipqsVoip && abstractVoip;
+
+    const lineType = abstract.phone_carrier?.line_type || ipqs.line_type || null;
+
+    const { compositeScore, riskLevel, breakdown } = calculateCompositeScore(ipqs, abstract);
+
+    const merged = {
+      ...ipqs,
+      VOIP: confirmedVoip,
+      line_type: lineType,
+      fraud_score: compositeScore,
+      risk_level: riskLevel,
+      score_breakdown: breakdown,
+      ipqs_raw_score: ipqs.fraud_score,
+      abstractRiskLevel: abstract.phone_risk?.risk_level || null,
+    };
+
+    return { statusCode: 200, headers, body: JSON.stringify(merged) };
   } catch (error) {
     console.error(error.response?.data || error.message);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "IPQualityScore request failed" }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Phone risk check failed" }) };
   }
 };
