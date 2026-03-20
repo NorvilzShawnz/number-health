@@ -75,27 +75,28 @@ function App() {
             scamRiskCheck(digits),
           ]);
           setProgress(p => ({ ...p, done: p.done + 1 }));
-          const d = data ?? {};
-          const s = scamData ?? {};
           return {
             phoneNumber: formatted,
-            valid: s.valid ?? d.valid,
-            active: s.active,
-            location: s.city && s.region
-              ? `${s.city}, ${s.region}`
-              : d.location,
-            lineType: s.line_type || d.line_type,
-            carrier: s.carrier || d.carrier,
-            fraudScore: s.fraud_score,
-            spammer: s.spammer,
-            recentAbuse: s.recent_abuse,
-            risky: s.risky,
-            voip: s.VOIP,
-            prepaid: s.prepaid,
-            doNotCall: s.do_not_call,
-            leaked: s.leaked,
-            tcpaBlacklist: s.tcpa_blacklist,
-            zipCode: s.zip_code,
+            valid: scamData.valid ?? data.valid,
+            active: scamData.active,
+            location: scamData.city && scamData.region
+              ? `${scamData.city}, ${scamData.region}`
+              : data.location,
+            lineType: scamData.line_type || data.line_type,
+            carrier: scamData.carrier || data.carrier,
+            fraudScore: scamData.fraud_score,
+            ipqsRawScore: scamData.ipqs_raw_score,
+            riskLevel: scamData.risk_level,
+            scoreBreakdown: scamData.score_breakdown,
+            spammer: scamData.spammer,
+            recentAbuse: scamData.recent_abuse,
+            risky: scamData.risky,
+            voip: scamData.VOIP,
+            prepaid: scamData.prepaid,
+            doNotCall: scamData.do_not_call,
+            leaked: scamData.leaked,
+            tcpaBlacklist: scamData.tcpa_blacklist,
+            zipCode: scamData.zip_code,
           };
         })
       );

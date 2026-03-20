@@ -387,6 +387,40 @@
   letter-spacing: 0.6px;
 }
 
+.score-raw-note {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.score-breakdown {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.score-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+}
+
+.breakdown-signal {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.breakdown-points {
+  color: #f87171;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Risk flags */
 .result-section-sublabel {
   font-size: 0.72rem;
