@@ -75,8 +75,6 @@ function App() {
             scamRiskCheck(digits),
           ]);
           setProgress(p => ({ ...p, done: p.done + 1 }));
-          const d = data ?? {};
-          const s = scamData ?? {};
           return {
             phoneNumber: formatted,
             valid: scamData.valid ?? data.valid,
