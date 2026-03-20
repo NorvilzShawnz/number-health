@@ -83,7 +83,6 @@ exports.handler = async (event) => {
         scoreBreakdown: breakdown,
         spammer: scamData.spammer,
         recentAbuse: scamData.recent_abuse,
-        risky: scamData.risky,
         voip: confirmedVoip,
         prepaid: scamData.prepaid,
         doNotCall: scamData.do_not_call,
