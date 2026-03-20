@@ -2,8 +2,6 @@
  * Composite fraud score algorithm combining IPQualityScore and Abstract API signals.
  *
  * Designed for outbound AI calling context:
- *  - IPQS "risky" flag is heavily discounted (it penalizes robocalls, which overlaps
- *    with legitimate AI outbound calling).
  *  - VOIP is only penalized when both APIs agree.
  *  - Cross-validated signals (both APIs confirm) carry full weight;
  *    single-source signals carry reduced weight.
@@ -63,13 +61,6 @@ function calculateCompositeScore(ipqs, abstract) {
 
   if (ipqs.prepaid === true) {
     add(5, "Prepaid line (IPQS)");
-  }
-
-  // "risky" is heavily discounted — IPQS defines it as "fraudulent activity,
-  // scams, robocalls, fake accounts" and the robocall overlap catches
-  // legitimate AI outbound callers.
-  if (ipqs.risky === true) {
-    add(3, "Risky flag (IPQS — discounted, robocall overlap)");
   }
 
   // ── Abstract-only signals ──────────────────────────────────────────

@@ -4,7 +4,6 @@ const FLAG_TOOLTIPS = {
   spammer:       'Has this number been reported for spam or harassing calls/texts?',
   recentAbuse:   'Has this number been associated with recent or ongoing fraud?',
   leaked:        'Has this number been exposed in an online database breach or compromise?',
-  risky:         'Is this number associated with fraudulent activity, scams, or robocalls?',
   voip:          'Is this a VOIP number? Confirmed only when both IPQualityScore and Abstract API agree.',
   prepaid:       'Is this number associated with a prepaid service plan?',
   doNotCall:     'Is this number listed on any Do Not Call (DNC) lists? (USA & Canada only)',
@@ -35,18 +34,6 @@ const RECOMMENDATIONS = {
       'Check with your carrier if this number is being spoofed by a third party generating abuse signals independent of your calls.',
       'Register at freecallerregistry.com to assert your verified business identity while the dispute is processed.',
       'If the flag does not clear within 2–3 weeks, retire the number and provision a fresh one — then register it on freecallerregistry.com before placing any calls.',
-    ],
-  },
-  risky: {
-    title: 'Remove "Risky" Flag from Your Number',
-    severity: 'high',
-    steps: [
-      'Register at freecallerregistry.com — this is the single most effective step and directly informs the analytics engines used by the three major US carriers.',
-      'Apply for Hiya Branded Calling at hiya.com to display your company name and call reason on outbound calls, which reduces hang-ups and complaint rates that feed the "Risky" score.',
-      'Dispute the flag with IPQualityScore at ipqualityscore.com/contact.',
-      'Ask your carrier to provision A-level STIR/SHAKEN attestation for this number, confirming it belongs to a verified business.',
-      'Reduce call velocity on this number (fewer calls per hour) — AI dialers hitting high volumes on a single number are a primary signal for the "Risky" label.',
-      'Monitor your number\'s standing continuously with a tool like Numeracle (numeracle.com) or Call Confident (callconfident.com).',
     ],
   },
   leaked: {
@@ -199,7 +186,6 @@ function SignalBreakdown({ result }) {
     { key: 'spammer',       label: 'Spammer (IPQS)',        value: result.spammer },
     { key: 'recentAbuse',   label: 'Recent Abuse (IPQS)',   value: result.recentAbuse },
     { key: 'leaked',        label: 'Leaked (IPQS)',         value: result.leaked },
-    { key: 'risky',         label: 'Risky (IPQS)',          value: result.risky },
     { key: 'voip',          label: 'VOIP (Abstract)',       value: result.voip },
     { key: 'prepaid',       label: 'Prepaid (IPQS)',        value: result.prepaid },
     { key: 'doNotCall',     label: 'Do Not Call (IPQS)',    value: result.doNotCall },
@@ -305,7 +291,6 @@ function RecommendationsPanel({ results }) {
     if (r.spammer)       activeKeys.add('spammer');
     if (r.recentAbuse)   activeKeys.add('recentAbuse');
     if (r.leaked)        activeKeys.add('leaked');
-    if (r.risky)         activeKeys.add('risky');
     if (r.voip)          activeKeys.add('voip');
     if (r.prepaid)       activeKeys.add('prepaid');
     if (r.doNotCall)     activeKeys.add('doNotCall');

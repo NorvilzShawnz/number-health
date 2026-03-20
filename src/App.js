@@ -90,7 +90,6 @@ function App() {
             scoreBreakdown: scamData.score_breakdown,
             spammer: scamData.spammer,
             recentAbuse: scamData.recent_abuse,
-            risky: scamData.risky,
             voip: scamData.VOIP,
             prepaid: scamData.prepaid,
             doNotCall: scamData.do_not_call,
